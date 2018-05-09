@@ -24,5 +24,22 @@ public class Player {
 	public void setFigure(Figure figure) {
 		this.figure = figure;
 	}
-
+	
+	@Override
+	public boolean equals(Object obj) {
+		
+		if(this == obj)
+			return true;
+		if(obj == null)
+			return false;
+		if(getClass() != obj.getClass())
+			return false;
+		Player other = (Player) obj;
+		if(!username.equals(other.getUsername()))
+			return false; 
+		if(username.equals(other.getUsername()) && figure != other.getFigure())
+			return false;
+		return true;
+	}
+	
 }

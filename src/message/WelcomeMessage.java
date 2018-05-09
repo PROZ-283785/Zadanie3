@@ -6,7 +6,7 @@ package message;
 
 public class WelcomeMessage {
 	
-	public enum Player{X,O};
+/*	public enum Player{X,O};
 	
 	private Player player;
 	private String opponentUsername;
@@ -30,5 +30,5 @@ public class WelcomeMessage {
 	public void setOpponentUsername(String opponentUsername) {
 		this.opponentUsername = opponentUsername;
 	}
-	
+	*/
 }

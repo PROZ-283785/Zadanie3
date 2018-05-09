@@ -1,6 +1,8 @@
 package message;
 
 import javafx.util.Pair;
+import model.Player;
+
 
 /*
  * Message with move made by user.
@@ -8,14 +10,12 @@ import javafx.util.Pair;
 
 
 public class MoveMessage {
-	
-	public enum Player{X,O};
-	
+
 	private Pair<Integer, Integer> coords;
 	private Player player;
 	
-	public MoveMessage(Integer x, Integer y, Player player) {
-		setCoords(new Pair<>(x,y));
+	public MoveMessage(Pair<Integer, Integer> coords, Player player) {
+		setCoords(coords);
 		setPlayer(player);
 	}
 	
@@ -39,7 +39,14 @@ public class MoveMessage {
 	}
 
 
-	
+	public String toString() {
+			if(coords != null) {
+				return player.getUsername()+ " "  + player.getFigure() + " " + coords.getKey() + " " + coords.getValue(); 
+			}
+			else {
+				return player.getUsername()+ " " + player.getFigure(); 
+			}
+	}
 	
 	
 }
