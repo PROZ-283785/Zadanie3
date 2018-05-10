@@ -8,6 +8,7 @@ import javax.jms.Queue;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sun.messaging.ConnectionFactory;
+import com.sun.messaging.Topic;
 
 public class Producer {
 
@@ -20,11 +21,11 @@ public class Producer {
 							"localhost:7676/jms");
 			JMSContext jmsContext = connectionFactory.createContext();
 			JMSProducer jmsProducer = jmsContext.createProducer();
-			Queue queue = new com.sun.messaging.Queue("TicTacToeQueue");
+			Topic topic = new com.sun.messaging.Topic("TicTacToeTopic");
 
 			Gson message = new GsonBuilder().create();
 			String msg = "Message " + moveMessage.toString();
-			jmsProducer.send(queue, message.toJson(moveMessage));
+			jmsProducer.send(topic, message.toJson(moveMessage));
 			System.out.printf("Wiadomosc '%s' wyslana \n", msg);
 
 		} catch (JMSException e) {

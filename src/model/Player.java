@@ -1,5 +1,6 @@
 package model;
 
+
 public class Player {
 	
 	public enum Figure{X,O};
@@ -8,10 +9,11 @@ public class Player {
 	private Figure figure;
 	
 	public Player() {
-		setUsername("Gracz");
+		setUsername("gracz");
 		setFigure(Figure.X);
 	}
 	
+
 	public String getUsername() {
 		return username;
 	}

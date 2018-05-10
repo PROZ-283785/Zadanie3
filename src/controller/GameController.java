@@ -3,14 +3,19 @@ package controller;
 import java.util.Optional;
 
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.TextMessage;
 
-import javafx.application.Application;
-import javafx.concurrent.Task;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.TextInputDialog;
@@ -19,27 +24,50 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
-import javafx.stage.Stage;
 import javafx.util.Pair;
-import message.Consumer;
 import message.MoveMessage;
 import message.Producer;
 import model.Player;
 import model.TicTacToeModel;
 
-public class GameController extends Application {
+public class GameController implements MessageListener{
 
 	private TicTacToeModel model = new TicTacToeModel();
 	private Player player = new Player();
 	private boolean readyToPlay = false;
 	
+	private MoveMessage moveMessage;
+	private MoveMessage opponentMoveMessage;
+	public MoveMessage getOpponentMoveMessage() {
+		return opponentMoveMessage;
+	}
+
+	public void setOpponentMoveMessage(MoveMessage opponentMoveMessage) {
+		this.opponentMoveMessage = opponentMoveMessage;
+	}
+
 	private Producer producer = new Producer();
-	private Consumer consumer = new Consumer();
 
 	@FXML
 	Text turnText;
 	@FXML
 	GridPane playfield;
+	
+	
+	public Node getNodeByRowColumnIndex (final int row, final int column) {
+	    Node result = null;
+	    ObservableList<Node> childrens = playfield.getChildren();
+
+	    for (Node node : childrens) {
+	        if(GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == column) {
+	            result = node;
+	            break;
+	        }
+	    }
+
+	    return result;
+	}
+	
 
 	private void drawX(TextFlow src) {
 		Text text = new Text("X");
@@ -47,6 +75,18 @@ public class GameController extends Application {
 		src.getChildren().add(text);
 	}
 
+	private void drawX(int row, int column) {
+		System.out.println("Rysuje na wspolrzednych " + row + column);
+		TextFlow src = (TextFlow)getNodeByRowColumnIndex(row, column);
+		drawX(src);
+	}
+	
+	private void drawO(int row, int column) {
+		System.out.println("Rysuje na wspolrzednych " + row + column);
+		TextFlow src = (TextFlow)getNodeByRowColumnIndex(row, column);
+		drawO(src);
+	}
+	
 	private void drawO(TextFlow src) {
 		Text text = new Text("O");
 		text.setFont(Font.font(30));
@@ -54,18 +94,19 @@ public class GameController extends Application {
 	}
 
 	@FXML
+	   private void initialize() {
+	    }
+	
+	@FXML
 	private void draw(MouseEvent e) {
 		
 
 		TextFlow src = (TextFlow) e.getSource();
 		Node source = (Node) e.getSource();
-		 System.out.println(source);
-		 System.out.println(isReadyToPlay());
-		// System.out.println(GridPane.getRowIndex(source));
-		// System.out.println(GridPane.getColumnIndex(source));
 
-		if (!readyToPlay) {
-			waitForOpponent();
+
+		if (!isReadyToPlay()) {
+			waitForOpponentMove();
 			return;
 		}
 		System.out.println("Gramy");
@@ -94,9 +135,13 @@ public class GameController extends Application {
 				checkResult(model.checkGame(GridPane.getRowIndex(source),
 						GridPane.getColumnIndex(source),
 						TicTacToeModel.State.O));
-
+				
 			}
-
+			
+			MoveMessage move = new MoveMessage(new Pair<>(GridPane.getRowIndex(source), GridPane
+					.getColumnIndex(source)), player);
+			sendMoveMessage(move);
+			
 		}
 
 	}
@@ -109,7 +154,6 @@ public class GameController extends Application {
 				Alert alert = new Alert(AlertType.INFORMATION);
 				alert.setTitle("Wynik");
 				alert.setHeaderText("Wygrał " + result.getValue());
-				// alert.setContentText("I have a great message for you!");
 				alert.showAndWait();
 
 				restart();
@@ -119,9 +163,6 @@ public class GameController extends Application {
 				Alert alert = new Alert(AlertType.INFORMATION);
 				alert.setTitle("Wynik");
 				alert.setHeaderText("Remis!");
-
-				// alert.setContentText("I have a great message for you!");
-
 				alert.showAndWait();
 
 				restart();
@@ -129,82 +170,112 @@ public class GameController extends Application {
 		}
 	}
 
-	private void getUsername() {
+	public void getUsername() {
 		TextInputDialog dialog = new TextInputDialog("gracz");
 		dialog.setTitle("Logowanie");
 		dialog.setHeaderText("Powiedz innym jak sie nazywasz");
 		dialog.setContentText("Wprowadz swoj nick: ");
 		Optional<String> result = dialog.showAndWait();
 		result.ifPresent(name -> player.setUsername(name));
-		System.out.println(player.getUsername());
 	}
 
-	private void waitForOpponentMessage() {
-		
-		consumer.receiveQueueMessagesAsynch();
-		while (!consumer.isMessageReceived()) {
 
-		}
-		System.out.println("Message received" + consumer.getMoveMessage().toString());
-		
-		if(consumer.getMoveMessage().getPlayer() == player)
-			waitForOpponentMessage();
-		
-		setReadyToPlay(true);
-	}
 	
-	private void waitForOpponent() {
-		
+	private void waitForOpponentMove() {
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle("Info");
-		alert.setHeaderText("Aby zagrac potrzeba dwoch graczy!");
-		alert.setContentText("Poczekaj aż przciwnik dołączy.");
+		alert.setHeaderText("Aby wykonac nastepny ruch musigo pierwiej wykonac przeciwnik!");
+		alert.setContentText("Poczekaj aż przeciwnik zrobi ruch.");
 		alert.showAndWait();
-		
-		waitForOpponentMessage();
-	/*	Task<Void> task = new Task<Void>() {
-			@Override
-			protected Void call() throws Exception {
-
-			
-				return null;
-			}
-		};
-
-		
-		Thread th = new Thread(task);
-		th.setDaemon(true);
-		th.start();
-		*/
+		setReadyToPlay(false);
 	}
-
+	
+	private void sendMoveMessage(MoveMessage move) {
+		producer.sendQueueMessages(move);
+		waitForOpponentMove();
+	}
+	
+	
 	@Override
-	public void start(Stage primaryStage) throws Exception {
+	public void onMessage(Message message) {
+	TextMessage msg = (TextMessage) message;
+		
+		Gson gson = new GsonBuilder().create();
+		
 		try {
-			getUsername();
-			
-			MoveMessage welcomeMessage = new MoveMessage(null, player);
-			producer.sendQueueMessages(welcomeMessage);
-
-			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
-					"GameWindow.fxml"));
-			Parent root = fxmlLoader.load();
-			Scene scene = new Scene(root, 600, 350);
-
-			primaryStage.setScene(scene);
-			primaryStage.setTitle("TicTacToe Game");
-			primaryStage.show();
-			waitForOpponent();
-		} catch (Exception e) {
+			setOpponentMoveMessage(gson.fromJson(msg.getText(), MoveMessage.class));
+		} catch (JsonSyntaxException | JMSException e) {
 			e.printStackTrace();
 		}
 
+		if(getOpponentMoveMessage() != null) {
+			System.out.println("Message received" + getOpponentMoveMessage().toString());
+			
+			if(getOpponentMoveMessage().getPlayer().equals(player)) {
+				System.out.println("wiadomosc od sb samego.");
+				return;
+			}
+			
+			System.out.println("Mozemy grac");
+			
+			if(getOpponentMoveMessage().getCoords() != null) {
+				Platform.runLater(()->drawOpponentMove());
+			}
+			
+			setReadyToPlay(true);
+			
+		}
+		
+		
+	}
+	
+	private void drawOpponentMove() {
+		
+		int rowIndex = new Integer(opponentMoveMessage.getCoords().getKey());
+		int columnIndex = new Integer(opponentMoveMessage.getCoords().getValue());
+		
+		if (model.getTurn() == TicTacToeModel.State.X) {
+			drawX(rowIndex, columnIndex);
+
+			turnText.setText("Turn: O");
+			model.setMarked(rowIndex, columnIndex, TicTacToeModel.State.X);
+			model.setTurn(TicTacToeModel.State.O);
+			checkResult(model.checkGame(rowIndex,
+					columnIndex,
+					TicTacToeModel.State.X));
+
+		} else {
+			drawO(rowIndex, columnIndex);
+
+			turnText.setText("Turn: X");
+			model.setMarked(rowIndex, columnIndex, TicTacToeModel.State.O);
+
+			model.setTurn(TicTacToeModel.State.X);
+			checkResult(model.checkGame(rowIndex,
+					columnIndex,
+					TicTacToeModel.State.O));
+			
+		}
+		
+		System.out.println("rysuje ruch " + opponentMoveMessage.toString());
 	}
 
-	public static void main(String[] args) {
-		launch(args);
+	public void waitForOpponent() {
+
+		Alert alert = new Alert(AlertType.INFORMATION);
+		alert.setTitle("Info");
+		alert.setHeaderText("Aby zagrać potrzeba dwóch graczy!");
+		alert.setContentText("Poczekaj aż przeciwnik dołączy.");
+		alert.showAndWait();
+	
+	}
+	
+	public void sendReadyMessage() {
+		MoveMessage moveMessage = new MoveMessage(null, player);
+		producer.sendQueueMessages(moveMessage);
 	}
 
+	
 	@FXML
 	private void restart() {
 		turnText.setText("Turn: X");
@@ -230,6 +301,16 @@ public class GameController extends Application {
 	public void setReadyToPlay(boolean readyToPlay) {
 		this.readyToPlay = readyToPlay;
 	}
+
+	public MoveMessage getMoveMessage() {
+		return moveMessage;
+	}
+
+	public void setMoveMessage(MoveMessage moveMessage) {
+		this.moveMessage = moveMessage;
+	}
+
+
 
 	
 }
