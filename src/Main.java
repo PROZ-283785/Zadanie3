@@ -2,7 +2,6 @@ import javax.jms.ConnectionFactory;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
-import javax.jms.Queue;
 import javax.jms.Topic;
 
 import controller.GameController;
@@ -22,10 +21,10 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		try {
-		
+
 			FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
 					"GameWindow.fxml"));
-			
+
 			Parent root = fxmlLoader.load();
 			Scene scene = new Scene(root, 600, 350);
 
@@ -37,7 +36,7 @@ public class Main extends Application {
 			receiveQueueMessagesAsynch();
 			gameController.getUsername();
 			gameController.sendReadyMessage();
-			gameController.waitForOpponent();
+			gameController.getWindowAlert().waitForOpponent();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
