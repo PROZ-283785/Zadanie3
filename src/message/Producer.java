@@ -3,7 +3,6 @@ package message;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
-import javax.jms.Queue;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

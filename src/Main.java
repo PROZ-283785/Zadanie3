@@ -27,16 +27,17 @@ public class Main extends Application {
 
 			Parent root = fxmlLoader.load();
 			Scene scene = new Scene(root, 600, 350);
-
+			
 			gameController = fxmlLoader.getController();
-
+			
 			primaryStage.setScene(scene);
+			primaryStage.setResizable(false);
 			primaryStage.setTitle("TicTacToe Game");
 			primaryStage.show();
 			receiveQueueMessagesAsynch();
 			gameController.getUsername();
 			gameController.sendReadyMessage();
-			gameController.getWindowAlert().waitForOpponent();
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -19,6 +19,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.util.Pair;
 import message.MoveMessage;
@@ -41,6 +42,8 @@ public class GameController implements MessageListener {
 	Text turnText;
 	@FXML
 	GridPane playfield;
+	@FXML
+	TextFlow alert;
 
 	public Node getNodeByRowColumnIndex(final int row, final int column) {
 		Node result = null;
@@ -81,9 +84,6 @@ public class GameController implements MessageListener {
 		src.getChildren().add(text);
 	}
 
-	@FXML
-	private void initialize() {
-	}
 
 	@FXML
 	private void draw(MouseEvent e) {
@@ -93,9 +93,12 @@ public class GameController implements MessageListener {
 
 		if (!isReadyToPlay()) {
 			if (player.getFigure() == Figure.Blank) {
-				windowAlert.waitForOpponent();
+				//windowAlert.waitForOpponent();
+				setAlert("Poczekaj aż przeciwnik dołączy.");
+				
 			} else {
-				windowAlert.waitForOpponentMove();
+				setAlert("Poczekaj aż przeciwnik zrobi ruch.");
+				//windowAlert.waitForOpponentMove();
 			}
 			return;
 		}
@@ -131,7 +134,7 @@ public class GameController implements MessageListener {
 			MoveMessage move = new MoveMessage(new Pair<>(GridPane.getRowIndex(
 					source), GridPane.getColumnIndex(source)), player);
 			sendMoveMessage(move);
-
+			setAlert("Poczekaj aż przeciwnik zrobi ruch.");
 		}
 
 	}
@@ -162,6 +165,8 @@ public class GameController implements MessageListener {
 
 	public void getUsername() {
 		player.setUsername(windowAlert.askForUsername());
+		setAlert("Poczekaj aż przeciwnik dołączy.");
+		
 	}
 
 	private void waitForOpponentMove() {
@@ -197,18 +202,20 @@ public class GameController implements MessageListener {
 			}
 
 			System.out.println("Mozemy grac");
-
+			Platform.runLater(() -> setAlert("Wykonaj ruch"));
 			if (getOpponentMoveMessage().getCoords() != null) {
 
 				if (player.getFigure() == Figure.Blank) {
 					player.setFigure(Figure.O);
-					Platform.runLater(() -> windowAlert.foundOpponent());
+					Platform.runLater(() -> setAlert("Znaleziono przeciwnika, wykonaj ruch."));
+					//Platform.runLater(() -> windowAlert.foundOpponent());
 				}
 
 				Platform.runLater(() -> drawOpponentMove());
 			} else {
 				player.setFigure(Figure.X);
-				Platform.runLater(() -> windowAlert.foundOpponent());
+				Platform.runLater(() -> setAlert("Znaleziono przeciwnika, wykonaj ruch."));
+				//Platform.runLater(() -> windowAlert.foundOpponent());
 			}
 
 			setReadyToPlay(true);
@@ -263,10 +270,23 @@ public class GameController implements MessageListener {
 			}
 
 		});
-
+		setAlert("");
 		model = new TicTacToeModel();
 	}
 
+	
+	public void setAlert(String msg) {
+		if(!alert.getChildren().isEmpty()) {
+			alert.getChildren().remove(0);
+		}
+		
+		Text text = new Text(msg);
+		text.setFont(Font.font(14));
+		alert.setTextAlignment(TextAlignment.CENTER);
+		alert.getChildren().add(text);
+		
+	}
+	
 	public boolean isReadyToPlay() {
 		return readyToPlay;
 	}

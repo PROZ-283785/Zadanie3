@@ -68,9 +68,14 @@
                   <Insets left="50.0" top="25.0" />
                </HBox.margin>
             </GridPane>
+            <TextFlow fx:id="alert" maxHeight="100.0" maxWidth="100.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="200.0">
+               <HBox.margin>
+                  <Insets left="25.0" top="25.0" />
+               </HBox.margin>
+            </TextFlow>
             <Text fx:id="turnText" strokeType="OUTSIDE" strokeWidth="0.0" text="Turn: X">
                <HBox.margin>
-                  <Insets left="100.0" right="25.0" top="150.0" />
+                  <Insets left="-125.0" right="25.0" top="150.0" />
                </HBox.margin>
                <font>
                   <Font size="18.0" />
